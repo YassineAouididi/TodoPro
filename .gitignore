@@ -1,0 +1,9 @@
+# Ignore node_modules
+node_modules/
+supabase/
+
+
+
+# Ignore environment files
+.env
+
