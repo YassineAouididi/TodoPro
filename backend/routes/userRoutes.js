@@ -1,7 +1,7 @@
 import express from 'express'
 import { authenticate } from '../middlewares/authMiddleware.js'
 import { authorizeRoles } from '../middlewares/roleMiddleware.js'
-import { getAllUsers, updateUserRole, createUser, deleteUser } from '../controllers/userController.js'
+import { getAllUsers, updateUser, createUser, deleteUser } from '../controllers/userController.js'
 import { body } from 'express-validator'
 
 const router = express.Router()
@@ -26,7 +26,7 @@ router.put(
   authenticate,
   authorizeRoles('admin'),
   [body('role').isIn(['admin', 'member']).withMessage('Invalid role')],
-  updateUserRole
+  updateUser
 )
 
 router.delete('/:id', authenticate, authorizeRoles('admin'), deleteUser)

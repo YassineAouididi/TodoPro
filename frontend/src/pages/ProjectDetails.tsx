@@ -5,6 +5,7 @@ import { Clock, Users, MessageSquare } from 'lucide-react';
 import CreateTaskModal from '../components/modals/CreateTaskModal';
 import { getProjectById, getTasksByProjectId } from '../Services/projectService';
 import { getAllTasks } from '../Services/taskService';
+import { User } from '../types/user';
 
 interface Project {
   _id: string;
@@ -14,8 +15,9 @@ interface Project {
   progress: number;
   startDate: string;
   dueDate: string;
-  created_by: string;
+  created_by: User;
   created_at: string;
+  teamMembers: User[];
 }
 
 interface Task {
@@ -140,12 +142,31 @@ const ProjectDetails: React.FC = () => {
         <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
           <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-3">
             <div className="sm:col-span-1">
+              <dt className="text-sm font-medium text-gray-500">Project Lead</dt>
+              <dd className="mt-1 text-sm text-gray-900">{project.created_by.name}</dd>
+            </div>
+            <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-gray-500">Start Date</dt>
               <dd className="mt-1 text-sm text-gray-900">{formatDate(project.startDate)}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-gray-500">Due Date</dt>
               <dd className="mt-1 text-sm text-gray-900">{formatDate(project.dueDate)}</dd>
+            </div>
+            <div className="sm:col-span-2">
+              <dt className="text-sm font-medium text-gray-500">Team Members</dt>
+              <dd className="mt-1 text-sm text-gray-900">
+                <div className="flex -space-x-2 overflow-hidden">
+                  {project.teamMembers.map((member) => (
+                    <span
+                      key={member._id}
+                      className="inline-block rounded-full bg-gray-200 px-3 py-1 text-sm font-semibold text-gray-700 mr-2"
+                    >
+                      {member.name}
+                    </span>
+                  ))}
+                </div>
+              </dd>
             </div>
             <div className="sm:col-span-3">
               <dt className="text-sm font-medium text-gray-500">Progress</dt>

@@ -5,7 +5,7 @@ import CreateProjectModal from '../components/modals/CreateProjectModal';
 import EditProjectModal from '../components/modals/EditProjectModal';
 import { useAuth } from '../context/AuthContext';
 import { Project } from '../types/project';
-import { getAllProjects, deleteProject, updateProject } from '../Services/projectService';
+import { getAllProjects, deleteProject} from '../Services/projectService';
 import toast from 'react-hot-toast';
 
 
@@ -55,17 +55,17 @@ const Projects: React.FC = () => {
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await deleteProject(projectId);
-        toast.success('Project deleted successfully');
-        fetchProjects();
-      } catch (error) {
-        console.error('Error deleting project:', error);
-        toast.error('Failed to delete project');
-      }
+  if (window.confirm('Are you sure you want to delete this project?')) {
+    try {
+      await deleteProject(projectId);
+      toast.success('Project deleted successfully');
+      setProjects((prev) => prev.filter((p) => p._id !== projectId)); // Update state immediately
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project');
     }
-  };
+  }
+};
 
     const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -184,9 +184,9 @@ const Projects: React.FC = () => {
         viewMode === 'grid' ? (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => (
-              <div key={project._id} className="bg-white rounded-lg shadow p-6 cursor-pointer" onClick={() => navigate(`/projects/${project._id}`)}>
+              <div key={project._id} className="bg-white rounded-lg shadow p-6 cursor-pointer">
                 <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
+                  <div className="flex-1" onClick={() => navigate(`/projects/${project._id}`)}>
                     <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(project.status)}`}>
                       {project.status.replace('_', ' ')}

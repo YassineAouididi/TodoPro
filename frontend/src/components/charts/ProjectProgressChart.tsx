@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -10,6 +10,7 @@ import {
   Legend,
   ChartOptions
 } from 'chart.js';
+import { getAllProjects } from '../../Services/projectService';
 
 ChartJS.register(
   CategoryScale,
@@ -20,57 +21,90 @@ ChartJS.register(
   Legend
 );
 
-const ProjectProgressChart: React.FC = () => {
-  const options: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: false,
-      },
+const options: ChartOptions<'bar'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          callback: function(value) {
-            return value + '%';
-          }
+    title: {
+      display: false,
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      max: 100,
+      ticks: {
+        callback: function(value: any) {
+          return value + '%';
         }
       }
     }
-  };
+  }
+};
 
-  const data = {
-    labels: ['Project A', 'Project B', 'Project C', 'Project D', 'Project E'],
+const COLORS = [
+  'rgba(59, 130, 246, 0.7)',
+  'rgba(20, 184, 166, 0.7)',
+  'rgba(139, 92, 246, 0.7)',
+  'rgba(249, 115, 22, 0.7)',
+  'rgba(16, 185, 129, 0.7)'
+];
+const BORDER_COLORS = [
+  'rgb(59, 130, 246)',
+  'rgb(20, 184, 166)',
+  'rgb(139, 92, 246)',
+  'rgb(249, 115, 22)',
+  'rgb(16, 185, 129)'
+];
+
+const ProjectProgressChart: React.FC = () => {
+  const [labels, setLabels] = useState<string[]>([]);
+  const [progressData, setProgressData] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await getAllProjects();
+        if (error || !data) {
+          setLabels([]);
+          setProgressData([]);
+        } else {
+          setLabels(data.map((p: any) => p.name));
+          setProgressData(data.map((p: any) => typeof p.progress === 'number' ? p.progress : 0));
+        }
+      } catch (err) {
+        setLabels([]);
+        setProgressData([]);
+      }
+      setLoading(false);
+    };
+
+    fetchProjects();
+  }, []);
+
+  const chartData = {
+    labels,
     datasets: [
       {
         label: 'Progress',
-        data: [75, 40, 90, 25, 60],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.7)', // blue
-          'rgba(20, 184, 166, 0.7)', // teal
-          'rgba(139, 92, 246, 0.7)', // purple
-          'rgba(249, 115, 22, 0.7)', // orange
-          'rgba(16, 185, 129, 0.7)'  // green
-        ],
-        borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(20, 184, 166)',
-          'rgb(139, 92, 246)',
-          'rgb(249, 115, 22)',
-          'rgb(16, 185, 129)'
-        ],
+        data: progressData,
+        backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length]),
+        borderColor: labels.map((_, i) => BORDER_COLORS[i % BORDER_COLORS.length]),
         borderWidth: 1,
       },
     ],
   };
 
-  return <Bar options={options} data={data} />;
+  if (loading) {
+    return <div className="flex items-center justify-center h-full">Loading...</div>;
+  }
+
+  return <Bar options={options} data={chartData} />;
 };
 
 export default ProjectProgressChart;

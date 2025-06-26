@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Calendar, Users } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,8 @@ interface CreateProjectModalProps {
   onClose: () => void;
   onProjectCreated: () => void;
 }
+import { getAllUsers } from '../../Services/userServices'; // Adjusted import
+import { User } from '../../types/user';
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   isOpen,
@@ -18,6 +20,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,8 +28,18 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     progress: 0,
     startDate: '',
     dueDate: '',
+    teamMembersIds: [] as string[],
   });
 
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen]);
+
+
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -44,6 +57,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         progress: 0,
         startDate: '',
         dueDate: '',
+        teamMembersIds: [],
 
       })
       onClose();
@@ -54,6 +68,25 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
       setIsLoading(false);
     }
   };
+
+  
+  const handleAssigneeToggle = (userId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      teamMembersIds: prev.teamMembersIds.includes(userId)
+        ? prev.teamMembersIds.filter((id) => id !== userId)
+        : [...prev.teamMembersIds, userId],
+    }));
+  };
+
+  const fetchUsers = async () => {
+      try {
+        const data = await getAllUsers(); // NEW service call
+        setUsers(data || []);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
 
   if (!isOpen) return null;
 
@@ -147,6 +180,23 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
+              </div>
+            </div>
+
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Team Member</label>
+              <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                {users.map((user) => (
+                  <label key={user._id} className="flex items-center space-x-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={formData.teamMembersIds.includes(user._id)}
+                      onChange={() => handleAssigneeToggle(user._id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{user.name}</span>
+                  </label>
+                ))}
               </div>
             </div>
 

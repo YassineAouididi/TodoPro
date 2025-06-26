@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Bell, Shield, Database, Mail, Globe, Users, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+// import { supabase } from '../utils/supabaseClient'; // Uncomment if using Supabase
 
 interface SystemSettings {
   siteName: string;
@@ -18,7 +18,6 @@ interface SystemSettings {
 const Settings: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState<SystemSettings>({
     siteName: 'ProjectFlow',
@@ -37,6 +36,7 @@ const Settings: React.FC = () => {
     totalTasks: 0,
     activeUsers: 0,
   });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     fetchSystemStats();
@@ -44,27 +44,38 @@ const Settings: React.FC = () => {
   }, []);
 
   const fetchSystemStats = async () => {
+    setStatsLoading(true);
     try {
-      const [usersResult, projectsResult, tasksResult] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact' }),
-        supabase.from('projects').select('id', { count: 'exact' }),
-        supabase.from('tasks').select('id', { count: 'exact' }),
-      ]);
+      // Example with Supabase (uncomment and configure if you use it)
+      // const [{ count: totalUsers }, { count: totalProjects }, { count: totalTasks }] = await Promise.all([
+      //   supabase.from('users').select('*', { count: 'exact', head: true }),
+      //   supabase.from('projects').select('*', { count: 'exact', head: true }),
+      //   supabase.from('tasks').select('*', { count: 'exact', head: true }),
+      // ]);
+      // setStats({
+      //   totalUsers: totalUsers || 0,
+      //   totalProjects: totalProjects || 0,
+      //   totalTasks: totalTasks || 0,
+      //   activeUsers: totalUsers || 0, // Replace with real active user logic
+      // });
 
-      setStats({
-        totalUsers: usersResult.count || 0,
-        totalProjects: projectsResult.count || 0,
-        totalTasks: tasksResult.count || 0,
-        activeUsers: usersResult.count || 0, // Simplified for now
-      });
+      // Mocked data for demonstration:
+      setTimeout(() => {
+        setStats({
+          totalUsers: 42,
+          totalProjects: 12,
+          totalTasks: 87,
+          activeUsers: 8,
+        });
+        setStatsLoading(false);
+      }, 500);
     } catch (error) {
       console.error('Error fetching system stats:', error);
+      setStatsLoading(false);
     }
   };
 
   const loadSettings = () => {
-    // In a real application, these would be loaded from the database
-    // For now, we'll use localStorage as a simple persistence mechanism
     const savedSettings = localStorage.getItem('systemSettings');
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings));
@@ -74,7 +85,6 @@ const Settings: React.FC = () => {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      // In a real application, these would be saved to the database
       localStorage.setItem('systemSettings', JSON.stringify(settings));
       toast.success('Settings saved successfully');
     } catch (error) {
@@ -129,32 +139,32 @@ const Settings: React.FC = () => {
       </div>
 
       {/* System Overview Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Total Users</dt>
           <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.totalUsers}
+            {statsLoading ? '...' : stats.totalUsers}
           </dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Total Projects</dt>
           <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.totalProjects}
+            {statsLoading ? '...' : stats.totalProjects}
           </dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Total Tasks</dt>
           <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.totalTasks}
+            {statsLoading ? '...' : stats.totalTasks}
           </dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Active Users</dt>
           <dd className="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
-            {stats.activeUsers}
+            {statsLoading ? '...' : stats.activeUsers}
           </dd>
         </div>
-      </div>
+      </dl>
 
       <div className="bg-white shadow rounded-lg">
         {/* Tab Navigation */}
@@ -290,7 +300,7 @@ const Settings: React.FC = () => {
                     min="1"
                     max="100"
                     value={settings.maxProjectsPerUser}
-                    onChange={(e) => handleInputChange('maxProjectsPerUser', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('maxProjectsPerUser', Number(e.target.value) || 1)}
                     className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
@@ -318,7 +328,7 @@ const Settings: React.FC = () => {
                     min="1"
                     max="168"
                     value={settings.sessionTimeout}
-                    onChange={(e) => handleInputChange('sessionTimeout', parseInt(e.target.value))}
+                    onChange={(e) => handleInputChange('sessionTimeout', Number(e.target.value) || 1)}
                     className="mt-1 block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                   <p className="mt-1 text-sm text-gray-500">
@@ -379,7 +389,7 @@ const Settings: React.FC = () => {
                       <h3 className="text-sm font-medium text-blue-800">Email Configuration</h3>
                       <div className="mt-2 text-sm text-blue-700">
                         <p>
-                          Email notifications require SMTP configuration in your MONGO project settings.
+                          Email notifications require SMTP configuration in your Supabase project settings.
                         </p>
                       </div>
                     </div>

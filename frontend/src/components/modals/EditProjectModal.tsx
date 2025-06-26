@@ -3,6 +3,8 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updateProject } from '../../Services/projectService';
 import { Project } from '../../types/project';
+import { getAllUsers } from '../../Services/userServices';
+import { User } from '../../types/user';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   project,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState<Project | null>(null);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
     setIsLoading(true);
     try {
-      await updateProject(formData.id, formData);
+      await updateProject(formData._id, formData);
       toast.success('Project updated successfully!');
       onProjectUpdated();
       onClose();
@@ -47,6 +50,35 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
       setIsLoading(false);
     }
   };
+
+  const handleAssigneeToggle = (userId: string) => {
+    setFormData((prev) => {
+      if (!prev) return prev;
+      const isAssigned = prev.teamMembers.some((user) => user._id === userId);
+      let newTeamMembers: User[];
+      if (isAssigned) {
+        newTeamMembers = prev.teamMembers.filter((user) => user._id !== userId);
+      } else {
+        const userToAdd = users.find((user) => user._id === userId);
+        newTeamMembers = userToAdd ? [...prev.teamMembers, userToAdd] : prev.teamMembers;
+      }
+      return { ...prev, teamMembers: newTeamMembers };
+    });
+  };
+  
+  useEffect(() => {
+      if (isOpen) {
+        fetchUsers();
+      }
+    }, [isOpen]);
+    const fetchUsers = async () => {
+        try {
+          const data = await getAllUsers(); // NEW service call
+          setUsers(data || []);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        }
+      };
 
   if (!isOpen || !formData) return null;
 
@@ -140,6 +172,23 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Team Member</label>
+              <div className="max-h-32 overflow-y-auto border border-gray-300 rounded-md p-2">
+                {users.map((user) => (
+                  <label key={user._id} className="flex items-center space-x-2 py-1">
+                    <input
+                      type="checkbox"
+                      checked={formData.teamMembers.some((member) => member._id === user._id)}
+                      onChange={() => handleAssigneeToggle(user._id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{user.name}</span>
+                  </label>
+                ))}
               </div>
             </div>
 

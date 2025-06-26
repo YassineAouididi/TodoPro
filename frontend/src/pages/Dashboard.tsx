@@ -3,10 +3,12 @@ import { BarChart, PieChart, Calendar, ArrowUpRight } from 'lucide-react';
 import ProjectProgressChart from '../components/charts/ProjectProgressChart';
 import TaskStatusChart from '../components/charts/TaskStatusChart';
 import ProjectCard from '../components/ProjectCard';
-import TaskCard from '../components/TaskCard';
 import CreateProjectModal from '../components/modals/CreateProjectModal';
-import { supabase } from '../lib/supabase';
+// Removed: import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+// Add your API services:
+import { getAllProjects } from '../Services/projectService';
+import { getAllTasks } from '../Services/taskService';
 
 interface Project {
   id: string;
@@ -53,60 +55,28 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      
-      // Fetch projects where user is a member
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select(`
-          id,
-          name,
-          description,
-          status,
-          progress,
-          start_date,
-          due_date,
-          created_by,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(3);
 
-      if (projectsError) throw projectsError;
+      // Fetch all projects
+      const allProjects: Project[] = await getAllProjects();
+      // Sort by created_at descending and get the 3 most recent
+      const projectsData = allProjects
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3);
 
-      // Fetch recent tasks
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select(`
-          id,
-          project_id,
-          title,
-          description,
-          status,
-          priority,
-          due_date,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      // Fetch all tasks
+      const allTasks: Task[] = await getAllTasks();
+      // Sort by created_at descending and get the 5 most recent
+      const tasksData = allTasks
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
 
-      if (tasksError) throw tasksError;
-
-      // Calculate stats
-      const { data: allProjects } = await supabase
-        .from('projects')
-        .select('id, status');
-
-      const { data: allTasks } = await supabase
-        .from('tasks')
-        .select('id, status');
-
-      setProjects(projectsData || []);
-      setRecentTasks(tasksData || []);
+      setProjects(projectsData);
+      setRecentTasks(tasksData);
       setStats({
-        totalProjects: allProjects?.length || 0,
-        completedProjects: allProjects?.filter(p => p.status === 'completed').length || 0,
-        totalTasks: allTasks?.length || 0,
-        completedTasks: allTasks?.filter(t => t.status === 'completed').length || 0,
+        totalProjects: allProjects.length,
+        completedProjects: allProjects.filter(p => p.status === 'completed').length,
+        totalTasks: allTasks.length,
+        completedTasks: allTasks.filter(t => t.status === 'completed').length,
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -129,6 +99,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* ...rest of your component remains unchanged... */}
+      {/* (No changes needed below this line) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <div className="mt-3 sm:mt-0">
@@ -142,48 +114,36 @@ const Dashboard: React.FC = () => {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Total Projects</dt>
-          <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-            <div className="flex items-baseline text-2xl font-semibold text-gray-900">
-              {stats.totalProjects}
-            </div>
-          </dd>
+          <dd className="mt-1 text-2xl font-semibold text-gray-900">{stats.totalProjects}</dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Completed Projects</dt>
-          <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-            <div className="flex items-baseline text-2xl font-semibold text-green-600">
-              {stats.completedProjects}
-              <span className="ml-2 text-sm font-medium text-gray-500">
-                {stats.totalProjects ? Math.round((stats.completedProjects / stats.totalProjects) * 100) : 0}%
-              </span>
-            </div>
+          <dd className="mt-1 flex items-baseline text-2xl font-semibold text-green-600">
+            {stats.completedProjects}
+            <span className="ml-2 text-sm font-medium text-gray-500">
+              {stats.totalProjects ? Math.round((stats.completedProjects / stats.totalProjects) * 100) : 0}%
+            </span>
           </dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Total Tasks</dt>
-          <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-            <div className="flex items-baseline text-2xl font-semibold text-gray-900">
-              {stats.totalTasks}
-            </div>
-          </dd>
+          <dd className="mt-1 text-2xl font-semibold text-gray-900">{stats.totalTasks}</dd>
         </div>
         <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
           <dt className="truncate text-sm font-medium text-gray-500">Completed Tasks</dt>
-          <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-            <div className="flex items-baseline text-2xl font-semibold text-green-600">
-              {stats.completedTasks}
-              <span className="ml-2 text-sm font-medium text-gray-500">
-                {stats.totalTasks ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
-              </span>
-            </div>
+          <dd className="mt-1 flex items-baseline text-2xl font-semibold text-green-600">
+            {stats.completedTasks}
+            <span className="ml-2 text-sm font-medium text-gray-500">
+              {stats.totalTasks ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+            </span>
           </dd>
         </div>
-      </div>
+      </dl>
 
-      {/* Charts */}
+      {/* Charts 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="overflow-hidden rounded-lg bg-white shadow">
           <div className="p-6">
@@ -201,7 +161,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>*/}
 
       {/* Recent Projects */}
       <div className="overflow-hidden rounded-lg bg-white shadow">
@@ -215,20 +175,7 @@ const Dashboard: React.FC = () => {
           {projects.length > 0 ? (
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => (
-                <div key={project.id} className="border rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900">{project.name}</h4>
-                  <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-                  <div className="mt-2">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      project.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      project.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {project.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
+                <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           ) : (

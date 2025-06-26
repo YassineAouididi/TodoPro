@@ -30,12 +30,8 @@ export const getAllUsers = async () => {
 };
 
 
-export const updateUser = async (_id: string, userData: Partial<User> | FormData) => {
-  const response = await API.put(`/users/${_id}`, userData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+export const updateUser = async (_id: string, data: Partial<User>) => {
+  const response = await API.put(`/users/${_id}`, data);
   return response.data;
 };
 

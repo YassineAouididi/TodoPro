@@ -9,15 +9,15 @@ export const getAllUsers = async (req, res) => {
   }
 }
 
-export const updateUserRole = async (req, res) => {
+export const updateUser = async (req, res) => {
   try {
-    const { role } = req.body
-    const updated = await User.findByIdAndUpdate(req.params.id, { role }, { new: true })
-    res.json(updated)
+    const updateFields = req.body; // Accept all updatable fields from the request body
+    const updated = await User.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ error: error.message });
   }
-}
+};
 
 
 export const createUser = async (req, res) => {

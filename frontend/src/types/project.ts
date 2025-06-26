@@ -9,5 +9,5 @@ export interface Project {
   startDate: string;
   dueDate: string;
   teamMembers: User[];
-  createdBy: User;
+  created_by: User;
 }

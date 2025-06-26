@@ -34,7 +34,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
   return (
     <Link 
-      to={`/projects/${project.id}`}
+      to={`/projects/${project._id}`}
       className="block overflow-hidden rounded-lg bg-white shadow transition-all duration-300 hover:shadow-md"
     >
       <div className="p-5">
